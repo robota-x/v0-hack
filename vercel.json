@@ -1,0 +1,6 @@
+{
+  "fluid": true,
+  "crons": [
+    { "path": "/api/cron/run", "schedule": "0 */6 * * *" }
+  ]
+}

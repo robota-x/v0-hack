@@ -1,16 +1,15 @@
-import { NextResponse } from "next/server";
+// BrightData webhook receiver — called by BrightData when an async scrape snapshot is ready.
+// Resumes the paused workflow via a hook token matching the snapshot_id.
+//
+// TODO (when wiring real BrightData):
+//   import { resumeHook } from 'workflow/api';
+//   await resumeHook(`bd:${snapshotId}`, { data: downloadedData });
 
-export const dynamic = "force-dynamic";
-
-// BrightData "delivery" webhook — they POST when a snapshot is ready.
-// The workflow itself will subscribe to this via Vercel Workflows' webhook step
-// (see docs/vercel-workflows.md). This route acts as the public receiver and
-// will be wired up once the workflow is implemented.
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => null);
-  console.log("[v0] brightdata webhook received:", body);
+  const body = await req.json().catch(() => ({}));
+  const snapshotId = body?.snapshot_id ?? 'unknown';
 
-  // TODO: forward to active workflow run via workflow.send / event emitter.
-  // For now we just ack so BrightData doesn't retry.
-  return NextResponse.json({ received: true });
+  console.log('[brightdata-hook] received webhook for snapshot_id:', snapshotId);
+
+  return Response.json({ ok: true });
 }
