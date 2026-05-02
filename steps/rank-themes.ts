@@ -1,4 +1,4 @@
-import { generateWithClaude } from '@/lib/ai';
+import { generateWithMemory } from '@/lib/ai-with-memory';
 import type { Theme, RankedTheme, CreatorProfile } from '@/lib/types';
 import { z } from 'zod';
 
@@ -8,6 +8,8 @@ Your job: rank themes by relevance to a specific creator's profile (niche, inter
 - relevanceScore (0-100, where 100 = perfect fit for their niche and audience)
 - whyItMatters (1 sentence: why this theme is relevant to their specific niche and goals)
 - whatToWatch (1 sentence: what specific signals or accounts they should monitor)
+
+IMPORTANT: If you receive memory context about this creator's past engagement patterns, use it to inform relevance scores. Boost themes similar to what they've engaged with before.
 
 Return your analysis as a JSON object with a "rankedThemes" array, sorted by relevanceScore descending.`;
 
@@ -28,11 +30,12 @@ const outputSchema = z.object({
 export async function rankAgainstProfile(
   themes: Theme[],
   profile: CreatorProfile,
+  creatorId: number,
 ): Promise<RankedTheme[]> {
   'use step';
 
   console.log(
-    `[rankAgainstProfile] calling Claude to rank ${themes.length} themes against niche="${profile.niche}"`,
+    `[rankAgainstProfile] creatorId=${creatorId} calling Claude to rank ${themes.length} themes against niche="${profile.niche}"`,
   );
 
   const prompt = `Creator profile:
@@ -45,14 +48,16 @@ ${JSON.stringify(themes, null, 2)}
 
 Rank these themes by relevance to this creator. Return the full theme objects with relevanceScore, whyItMatters, and whatToWatch added.`;
 
-  const output = await generateWithClaude({
+  const output = await generateWithMemory({
     system: SYSTEM_PROMPT,
     prompt,
     schema: outputSchema,
+    creatorId,
+    agentId: 'rank',
   });
 
   console.log(
-    `[rankAgainstProfile] ranked ${output.rankedThemes.length} themes, top score: ${output.rankedThemes[0]?.relevanceScore ?? 'N/A'}`,
+    `[rankAgainstProfile] creatorId=${creatorId} ranked ${output.rankedThemes.length} themes, top score: ${output.rankedThemes[0]?.relevanceScore ?? 'N/A'}`,
   );
 
   return output.rankedThemes.sort((a, b) => b.relevanceScore - a.relevanceScore);

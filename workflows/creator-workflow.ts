@@ -34,8 +34,8 @@ export async function creatorWorkflow(input: { creatorId: number; runId: number 
     break;
   }
 
-  const themes = await distilThemes({ profiles: rawProfiles, hashtagFeeds: rawHashtags });
-  const ranked = await rankAgainstProfile(themes, creatorData.profile);
+  const themes = await distilThemes({ profiles: rawProfiles, hashtagFeeds: rawHashtags }, input.creatorId);
+  const ranked = await rankAgainstProfile(themes, creatorData.profile, input.creatorId);
 
   await persistSnapshot({ creatorId: input.creatorId, rankedThemes: ranked, runId: input.runId });
   
