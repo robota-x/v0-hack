@@ -16,7 +16,7 @@ export interface CreatorProfile {
 // ─── Step 1 output ───────────────────────────────────────────────────────────
 
 export interface CreatorData {
-  creatorId: string;
+  creatorId: number;
   followList: FollowList;
   profile: CreatorProfile;
 }
@@ -68,10 +68,6 @@ export interface RankedTheme extends Theme {
   whatToWatch: string;
 }
 
-// ─── Step 5a output (DB snapshot record) ─────────────────────────────────────
-
-export interface Snapshot {
-  creatorId: string;
-  rankedThemes: RankedTheme[];
-  generatedAt: string; // ISO 8601 — set inside persistSnapshot step
-}
+// ─── Step 5a output — shape written to DB via POST /api/snapshots ────────────
+// Canonical type lives in lib/db.ts (SnapshotTheme / Snapshot).
+// RankedTheme[] is mapped to SnapshotTheme[] inside the persistSnapshot step.

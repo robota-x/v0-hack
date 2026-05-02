@@ -14,8 +14,6 @@
     "jsx": "preserve",
     "incremental": true,
 
-    "plugins": [{ "name": "next" }],
-    "paths": { "@/*": ["./*"] }
     "plugins": [
       { "name": "next" },
       { "name": "workflow" }
