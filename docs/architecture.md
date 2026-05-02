@@ -1,20 +1,144 @@
-# Project Architecture — Trend Monitor for Creators
+# Project Architecture — Creator Companion
 
 ## Vision
 
-A proactive mobile-first web app that monitors social media (Instagram first, TikTok second) for emerging trends, hashtags, and viral formats — then automatically pushes personalized video/reel ideas to content creators. The agent runs continuously in the background; creators receive actionable, timely nudges rather than having to do their own trend research.
+A mobile-first web app that gives content creators a live snapshot of what's happening in their personal "sphere of interest" on Instagram. The creator defines a list of accounts and hashtags they care about. A background agent scrapes that sphere, distils it through an LLM, ranks it against the creator's profile, and both updates their dashboard and pushes a notification — on every run.
 
 ## Hackathon Scope
 
 **MVP (must ship):**
-- Background Vercel Workflow that scrapes Instagram trends every N hours
-- Claude-powered idea generation tailored to a creator's niche
-- Push notification delivery to the creator's mobile browser (web push or Expo)
-- Simple mobile-first web UI: notification inbox + idea cards with accept/reject
+- Onboarding + CRUD UI for the creator's follow list (accounts + hashtags)
+- Background Vercel Workflow: scrape → distil → rank → update page + push notification
+- Mobile-first "Creator Companion" dashboard showing the latest snapshot
+- Push notification on each workflow run
+
+**Explicit out of scope for this hack:**
+- Over-time tracking / deduplication (each run is a fresh independent snapshot)
+- "Generate video ideas" step (we rank/filter trends, we don't generate creative briefs)
+- "Important vs. not" threshold logic (every run → always both update page and push)
+- Importance-based frequency capping
 
 **Stretch goal:**
-- Mubit AI long-term memory: personalize ideas based on creator's style, history, and past feedback
-- Multi-creator support with per-creator namespaced memory
+- Mubit AI: wraps the two LLM steps (Distil + Rank) with `getContext()` to inject the creator's learned preferences and `reflect()` after feedback
+
+## Hackathon Design Philosophy
+
+Each workflow run is a **self-contained instant snapshot**. We don't compare against previous runs, don't deduplicate, don't track velocity over time. The run may surface the same trends as the previous run — that's acceptable. The value is the distilled, personalized view of the creator's sphere *right now*.
+
+This simplifies the architecture significantly: no inter-run state, no KV for trend dedup, no delta logic.
+
+## Pipeline
+
+```
+Vercel Cron (every N hours)
+    │
+    ▼
+GET /api/cron/run-for-all-creators
+    │  for each creator: creatorWorkflow.start({ creatorId })
+    ▼
+
+creatorWorkflow({ creatorId })              ← 'use workflow'
+    │
+    ├─ step: fetchCreatorData()             ← DB: follow list + user profile
+    │
+    ├─ step: scrapeInstagram(followList)    ← BrightData /trigger (profiles + hashtags)
+    │       BrightData webhook →
+    │       POST /api/hooks/brightdata →
+    │       Vercel hook resumes workflow
+    │
+    ├─ step: distilThemes(rawData)          ← Claude API   [Mubit: getContext() stretch]
+    │       Input: raw scraped posts, profiles, hashtag data
+    │       Output: structured themes, patterns, notable content in this sphere
+    │
+    ├─ step: rankAgainstProfile(themes, profile)  ← Claude API   [Mubit: getContext() stretch]
+    │       Input: distilled themes + creator profile (interests, style)
+    │       Output: ordered list of most relevant themes for this creator
+    │
+    ├─ step: persistSnapshot(ranked)        ← DB: write latest snapshot for dashboard
+    │
+    └─ step: sendPushNotification(ranked)   ← Web Push API (VAPID)
+```
+
+## Where Claude Is Used
+
+Claude (claude-sonnet-4-6) is the engine for **two** steps:
+
+### 1. Distil step
+Takes raw scraped data (posts, captions, hashtags, engagement counts, audio metadata) and extracts meaningful themes. No creator-specific knowledge needed here — pure signal extraction from the data.
+
+```
+System: You are a social media analyst. Extract the dominant themes, emerging patterns,
+        and notable content from this raw Instagram data snapshot.
+
+User:   Raw scraped data: [profiles, posts, hashtag feeds from follow list]
+
+        Return structured JSON: themes[], each with name, description,
+        evidence (top posts/accounts), and strength signal (high/medium/low).
+```
+
+### 2. Rank/Filter step
+Takes the distilled themes + creator profile and produces a ranked, personalized view.
+
+```
+System: You are a content advisor for a creator.
+        Creator profile: [interests, style, niche — from DB]
+        [Mubit context injected here if stretch goal enabled]
+
+User:   These themes are trending in this creator's sphere:
+        [distilled themes from step 1]
+
+        Rank them by relevance to this creator.
+        For each: why it matters to them, what to watch.
+        Drop anything irrelevant to their niche.
+```
+
+## Frontend Pages
+
+```
+/onboarding          → first-time setup: follow list seeding + profile (interests, style)
+/follow              → CRUD: add/remove accounts and hashtags to monitor
+/profile             → edit creator profile (interests, style, niche)
+/ (dashboard)        → latest snapshot: ranked themes for this creator
+                        shows: theme name, why it matters, key posts/accounts
+                        "Last updated: X minutes ago"
+/push-setup          → Web Push permission + subscription enrollment
+```
+
+No idea cards, no accept/reject for this hack. The dashboard shows the ranked snapshot and that's it.
+
+## Follow List Design
+
+The follow list is the seed for the Discover step. It contains:
+- **Accounts**: Instagram usernames to monitor (scraped via Profile Scraper)
+- **Hashtags**: hashtags to monitor (scraped via Hashtag Scraper)
+
+Stored in DB per creator. CRUD managed entirely through the `/follow` page. No auto-population from Instagram.
+
+The follow list drives *what* BrightData scrapes each run:
+```typescript
+// Every account → Profile Scraper call
+// Every hashtag → Hashtag Scraper call
+// All in parallel via Promise.all inside the scrape step
+```
+
+## Where Mubit Fits (Stretch)
+
+Mubit wraps **only the two LLM steps** — Distil and Rank/Filter. Not the scrape step.
+
+```typescript
+// Before each LLM step:
+const context = await mubit.getContext({
+  namespace: `creator:${creatorId}`,
+  query: currentSphereDescription,
+  maxTokens: 500
+});
+// → inject context into system prompt
+
+// After creator interacts with the dashboard (future feedback mechanism):
+await mubit.reflect({ namespace: `creator:${creatorId}`, outcome: feedbackData });
+```
+
+This is the only integration point. Mubit improves LLM relevance over time as it learns what themes the creator finds valuable. For the hack, if time allows, wire `getContext()` into both LLM steps using the creator's stated interests as seed memories on onboarding.
 
 ## Stack
 
@@ -22,177 +146,89 @@ A proactive mobile-first web app that monitors social media (Instagram first, Ti
 |---|---|
 | Hosting & orchestration | Vercel (Workflows + Functions + Cron) |
 | Frontend | Next.js (App Router), mobile-first |
-| Social data | BrightData Instagram Scrapers (primary); TikTok Scrapers (secondary) |
-| Idea generation | Claude API (claude-sonnet-4-6) |
-| Push notifications | Web Push API (VAPID) or Expo Push |
-| Persistence (inter-run state) | Vercel KV (Redis) — "seen trend IDs", creator subscriptions |
-| Database | Vercel Postgres or Neon — users, creator profiles, notification history |
-| Memory layer (stretch) | Mubit AI |
+| Social data | BrightData Instagram Scrapers (Hashtag + Profile primary) |
+| LLM | Claude API — claude-sonnet-4-6 (Distil + Rank steps) |
+| Push notifications | Web Push API (VAPID) |
+| Database | Vercel Postgres / Neon — users, follow lists, snapshots |
+| Memory layer (stretch) | Mubit AI (wraps Distil + Rank LLM steps only) |
+| Inter-run state | None needed (snapshot model, no dedup) |
 
-## Data Flow
+Note: **No Vercel KV needed** for this hack — no inter-run trend dedup. KV may be used for push subscription tokens if needed, but Postgres can handle that too.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    BACKGROUND (Vercel Cron)                      │
-│                                                                  │
-│  cron: every 30min (Pro) or 4h (Hobby)                          │
-│       │                                                          │
-│       ▼                                                          │
-│  GET /api/cron/poll-trends                                       │
-│       │ calls workflow.start()                                   │
-│       ▼                                                          │
-│  trendMonitorWorkflow()                  ← 'use workflow'        │
-│    │                                                             │
-│    ├─ step: scrapeSocialTrends()         ← BrightData /trigger  │
-│    │      └── BrightData webhook → POST /api/hooks/brightdata   │
-│    │                (Vercel hook resumes workflow)               │
-│    │                                                             │
-│    ├─ step: filterNewTrends(raw, kvStore)← diff vs Vercel KV    │
-│    │      └── skip if nothing new                               │
-│    │                                                             │
-│    ├─ step: getSubscribedCreators()      ← DB query             │
-│    │                                                             │
-│    └─ for each creator:                                          │
-│         creatorNotifyWorkflow.start({ creatorId, trends })       │
-│                                                                  │
-│  creatorNotifyWorkflow()                 ← child workflow        │
-│    ├─ step: fetchCreatorProfile()        ← DB                   │
-│    ├─ step: [fetchCreatorMemory()]       ← Mubit recall()       │
-│    ├─ step: generateVideoIdeas()         ← Claude API           │
-│    └─ step: sendPushNotification()       ← Web Push / Expo      │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+## BrightData Scraping (Discover Step)
 
-┌─────────────────────────────────────────────────────────────────┐
-│                    FRONTEND (Mobile Web)                         │
-│                                                                  │
-│  / (home)          → notification inbox (idea cards)            │
-│  /ideas/:id        → idea detail: format, hashtags, angle       │
-│  /settings         → niche, style prefs, notification settings  │
-│  /onboarding       → new creator setup                          │
-│                                                                  │
-│  Push notification → deep links to /ideas/:id                   │
-│                                                                  │
-│  Creator taps Accept/Skip → POST /api/feedback                  │
-│       └── step: [mubit.reflect()]  ← memory update (stretch)   │
-└─────────────────────────────────────────────────────────────────┘
+Each run scrapes the creator's entire follow list:
+
+```typescript
+async function scrapeInstagram(followList: FollowList) {
+  'use step';
+  const jobs = await Promise.all([
+    ...followList.accounts.map(username =>
+      brightdata.trigger('instagram_profile', [{ url: `https://instagram.com/${username}/` }])
+    ),
+    ...followList.hashtags.map(tag =>
+      brightdata.trigger('instagram_hashtag', [{ hashtag: tag }])
+    ),
+  ]);
+  // returns snapshot_ids; BrightData webhooks will resume the workflow
+  return jobs.map(j => j.snapshot_id);
+}
 ```
 
-## Vercel Workflow Design Decisions
+BrightData webhook → POST `/api/hooks/brightdata` → `bdHook.resume(snapshotId, data)` → workflow continues once all snapshots are ready.
 
-1. **Short-lived runs per cron tick** (not one eternal loop) — avoids 25K event / 10K step limits. Each tick = one run that completes.
-2. **Child workflows per creator** — fan-out pattern; one parent discovers trends, N children handle per-creator personalization + push.
-3. **Vercel KV for inter-run state** — store `Set<trendId>` of already-seen trends. Reset weekly.
-4. **BrightData webhook → Vercel hook** — async scrape completion resumes the paused workflow. No polling loop inside the workflow.
-5. **Pro plan required** — Hobby cron is once/day; useless for trend monitoring.
-6. **Fluid Compute enabled** — `"fluid": true` in vercel.json; reduces cold starts, better for AI workloads.
+Raw data passed to Distil step: profiles (follower counts, recent posts), hashtag top posts (captions, engagement, audio).
 
-## BrightData Scraping Strategy
-
-### What we scrape (Instagram)
-
-| Scraper | Frequency | Purpose |
-|---|---|---|
-| Hashtag Scraper | Every 4h | Core trend signal — niche hashtag velocity |
-| Reels Scraper | Every 4h | Trending audio detection (`music_info.uses_count`) |
-| Profile Scraper | Daily | Creator's own growth metrics |
-| Post Scraper | On-demand | Deep dive on viral posts in niche |
-
-### Trend signals we extract
-
-- **Hashtag velocity**: `video_view_count / hours_since_post` for posts in a hashtag — rising velocity = emerging trend
-- **Audio spread**: `music_info.uses_count` delta between scrape runs — rapid growth = trending sound
-- **Format patterns**: clustering by `video_duration`, `product_type`, caption structure of top performers
-- **Cross-niche spread**: same hashtag appearing in multiple niche scrapes
-
-### Deduplication
-
-Store `Set<shortcode>` in Vercel KV per niche. Only process new posts. Reset the set weekly to re-surface evergreen trends.
-
-## Claude Idea Generation
-
-Each idea card contains:
-- **Hook**: the first 3 seconds (text/visual concept)
-- **Format**: length, style (tutorial / reaction / trending sound overlay / POV / etc.)
-- **Hashtags**: 5–8 suggested hashtags from trend data
-- **Angle**: what makes this specific to this creator's niche
-- **Why now**: the trend signal that triggered this idea
-
-Prompt structure:
-```
-System: You are a content strategist for [creator niche].
-        [Creator context from Mubit memory OR static profile]
-
-User:   Trending right now in this niche:
-        - Hashtag: #gymtok (velocity: +340% in 24h)
-        - Audio: "original sound - fitcoach_mike" (uses_count: 48,200 → 52,100 in 4h)
-        - Format: "reaction to gym fail" clips performing 3x avg views
-
-        Generate 3 specific, actionable video ideas for this creator.
-        For each: hook, format, hashtags, angle, why now.
-        Avoid topics already covered: [covered_topics from memory].
-```
-
-## Push Notification Strategy
-
-- **Trigger**: new trend detected + ideas generated for a subscribed creator
-- **Frequency cap**: max 1 notification per creator per 4h (stored in KV)
-- **Content**: preview of top idea — "🔥 [Hashtag] is trending in your niche. Here's a hook: ..."
-- **Deep link**: taps open `/ideas/:id` with full idea detail
-- **Feedback**: Accept / Skip buttons on idea card → recorded for Mubit memory (stretch)
-
-## File Structure (target)
+## File Structure
 
 ```
 /
 ├── app/
 │   ├── workflows/
-│   │   ├── trend-monitor.ts       ← main workflow
-│   │   └── creator-notify.ts      ← child workflow per creator
+│   │   └── creator-workflow.ts      ← single workflow (no child needed for hack)
 │   ├── steps/
-│   │   ├── scrape-trends.ts       ← BrightData API calls
-│   │   ├── filter-trends.ts       ← delta vs KV store
-│   │   ├── generate-ideas.ts      ← Claude API
-│   │   ├── send-push.ts           ← Web Push / Expo
-│   │   └── memory.ts              ← Mubit recall/remember/reflect
+│   │   ├── fetch-creator-data.ts    ← DB: follow list + profile
+│   │   ├── scrape-instagram.ts      ← BrightData trigger + await snapshots
+│   │   ├── distil-themes.ts         ← Claude (+ Mubit stretch)
+│   │   ├── rank-themes.ts           ← Claude (+ Mubit stretch)
+│   │   ├── persist-snapshot.ts      ← write to DB
+│   │   └── send-push.ts             ← Web Push VAPID
 │   ├── api/
-│   │   ├── cron/poll-trends/      ← Vercel Cron trigger
-│   │   ├── hooks/brightdata/      ← BrightData webhook receiver
-│   │   ├── feedback/              ← creator Accept/Skip
-│   │   └── push/subscribe/        ← Web Push subscription endpoint
-│   ├── (mobile)/
-│   │   ├── page.tsx               ← notification inbox
-│   │   ├── ideas/[id]/page.tsx    ← idea detail
-│   │   ├── settings/page.tsx      ← creator prefs
-│   │   └── onboarding/page.tsx    ← new creator setup
+│   │   ├── cron/run/route.ts        ← Vercel Cron trigger
+│   │   └── hooks/brightdata/route.ts← BrightData webhook receiver
+│   ├── (app)/
+│   │   ├── page.tsx                 ← dashboard: latest snapshot
+│   │   ├── follow/page.tsx          ← CRUD: follow list
+│   │   ├── profile/page.tsx         ← creator profile prefs
+│   │   └── onboarding/page.tsx      ← first-time setup
 │   └── layout.tsx
 ├── lib/
-│   ├── brightdata.ts              ← BrightData client
-│   ├── claude.ts                  ← Anthropic client
-│   ├── mubit.ts                   ← Mubit client (stretch)
-│   ├── kv.ts                      ← Vercel KV helpers
-│   └── push.ts                    ← Web Push helpers
-├── vercel.json                    ← crons + fluid compute
-└── docs/                          ← this folder
+│   ├── brightdata.ts                ← BrightData API client
+│   ├── claude.ts                    ← Anthropic SDK client
+│   ├── mubit.ts                     ← Mubit client (stretch)
+│   ├── db/
+│   │   └── schema.ts                ← Drizzle or Prisma schema
+│   └── push.ts                      ← Web Push helpers
+├── vercel.json                      ← crons + fluid compute
+└── docs/
 ```
 
-## MVP Build Order
+## Build Order
 
-1. `vercel.json` — cron config, fluid compute
-2. `lib/brightdata.ts` — trigger + webhook download
-3. `app/api/cron/poll-trends` + `app/api/hooks/brightdata` — cron trigger + webhook receiver
-4. `app/workflows/trend-monitor.ts` — main workflow (scrape → filter → fan-out)
-5. `app/steps/generate-ideas.ts` — Claude idea generation with static creator profile
-6. `app/steps/send-push.ts` — Web Push notification
-7. Mobile UI: inbox + idea cards
-8. **Stretch**: Mubit memory integration in `app/steps/memory.ts`
+1. **DB schema** — users, follow_list (accounts + hashtags), creator_profile, snapshots
+2. **Frontend: onboarding + follow CRUD** — get the follow list working first; it seeds everything else
+3. **`lib/brightdata.ts`** — trigger + webhook download
+4. **`app/api/hooks/brightdata`** — webhook receiver + Vercel hook resume
+5. **`app/workflows/creator-workflow.ts`** — wire up all steps
+6. **`steps/distil-themes.ts`** — Claude call, hardcode prompt, test on real scrape data
+7. **`steps/rank-themes.ts`** — Claude call with creator profile context
+8. **`steps/persist-snapshot.ts` + dashboard** — show results in the UI
+9. **`steps/send-push.ts` + push subscription** — Web Push VAPID
+10. **Stretch: `lib/mubit.ts`** — wrap distil + rank steps with getContext()
 
 ## Environment Variables
 
 ```bash
-# Vercel
-VERCEL_TOKEN=...
-
 # BrightData
 BRIGHTDATA_API_TOKEN=...
 
@@ -209,8 +245,4 @@ VAPID_SUBJECT=mailto:...
 
 # Database
 DATABASE_URL=...
-
-# KV (Vercel KV auto-injected if using Vercel marketplace)
-KV_REST_API_URL=...
-KV_REST_API_TOKEN=...
 ```

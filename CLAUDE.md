@@ -1,34 +1,51 @@
-# v0-hack — Trend Monitor for Creators
+# v0-hack — Creator Companion
 
-Hackathon project: a proactive agent that monitors Instagram/TikTok trends and pushes personalized video idea notifications to content creators. Mobile-first webapp built on Vercel Workflows (Track 1).
+Hackathon project: a mobile-first web app that gives content creators a live snapshot of what's happening in their personal "sphere of interest" on Instagram. Creator defines a follow list (accounts + hashtags); a Vercel Workflow scrapes it, distils it with Claude, ranks it against their profile, updates their dashboard, and pushes a notification.
+
+**Track**: Vercel Workflows (Track 1)
 
 ## Docs
 
-Research docs are in `/docs/`. Read these before making architectural decisions:
+Read before making any architectural decisions:
 
-- [`docs/architecture.md`](docs/architecture.md) — project vision, full data flow diagram, file structure, MVP build order, env vars
-- [`docs/vercel-workflows.md`](docs/vercel-workflows.md) — Vercel Workflows: concepts, pricing, limits, gotchas, pipeline architecture
-- [`docs/brightdata-instagram.md`](docs/brightdata-instagram.md) — BrightData Instagram scrapers: available endpoints, API interface, field schemas, webhook pattern
-- [`docs/brightdata-tiktok.md`](docs/brightdata-tiktok.md) — BrightData TikTok scrapers: available endpoints, comparison to Instagram
-- [`docs/mubit-ai.md`](docs/mubit-ai.md) — Mubit AI memory layer: SDK, integration pattern, creator memory schema (stretch goal)
+- [`docs/architecture.md`](docs/architecture.md) — canonical design: pipeline, data flow, file structure, build order, env vars
+- [`docs/vercel-workflows.md`](docs/vercel-workflows.md) — Vercel Workflows: concepts, pricing, limits, gotchas
+- [`docs/brightdata-instagram.md`](docs/brightdata-instagram.md) — BrightData Instagram scrapers: endpoints, API shape, webhook pattern
+- [`docs/brightdata-tiktok.md`](docs/brightdata-tiktok.md) — BrightData TikTok scrapers (future/fallback)
+- [`docs/mubit-ai.md`](docs/mubit-ai.md) — Mubit AI memory layer (stretch goal only)
 
-## Key Architectural Decisions
+## Pipeline (5 steps)
 
-- **Vercel Workflows** (Track 1): `'use workflow'` + `'use step'` directives; cron-triggered short-lived runs (not eternal loops)
-- **Instagram first** for trends (Hashtag + Reels scrapers); TikTok as fallback/complement
-- **BrightData async + webhook**: POST /trigger → receive webhook → download snapshot; integrated via Vercel Workflow hooks
-- **Vercel KV** for inter-run dedup state (seen trend IDs); Postgres for users/profiles
-- **Child workflows** for per-creator fan-out
-- **Mubit AI** is the stretch goal — plug in at `recall()` before Claude call and `reflect()` after creator feedback
+```
+Cron → creatorWorkflow
+  1. fetchCreatorData()      ← DB: follow list + profile
+  2. scrapeInstagram()       ← BrightData (profiles + hashtags from follow list)
+  3. distilThemes()          ← Claude API  [Mubit getContext() — stretch]
+  4. rankAgainstProfile()    ← Claude API  [Mubit getContext() — stretch]
+  5a. persistSnapshot()      ← DB → dashboard
+  5b. sendPushNotification() ← Web Push VAPID
+```
+
+## Locked Hackathon Decisions
+
+- **Snapshot model, no over-time tracking** — each run is independent; no dedup, no delta, no Vercel KV for trends. May repeat content across runs — acceptable.
+- **No "generate ideas" step** — output is ranked/filtered themes from the creator's sphere, not creative briefs.
+- **Always both outputs** — every run updates the dashboard AND sends a push notification. No "importance" threshold.
+- **Follow list is manual CRUD** — accounts + hashtags entered by creator on `/follow` page. No Instagram auth or auto-population.
+- **Claude is explicit in two steps** — Distil (signal extraction) and Rank (personalization). Both use claude-sonnet-4-6.
+- **Mubit wraps LLM steps only** — `getContext()` before Distil + Rank prompts; `reflect()` after feedback. Does NOT wrap the scrape step. This is stretch goal only.
+- **No Vercel KV needed** — no inter-run state for this hack. Postgres handles everything.
 
 ## Critical Gotchas
 
-- **Pro plan required** for sub-daily cron (Hobby = once/day max — useless for trend monitoring)
-- `'use workflow'` body must be deterministic — all I/O inside `'use step'` functions only
-- Each step = 3 events; 25K events/run limit → ~8K steps max per run → use child workflows
-- BrightData response is NDJSON by default — always request `?format=json`
-- Verify exact BrightData collector IDs in the dashboard (they may be account-specific)
+- Vercel Workflows: **Pro plan required** for sub-daily cron. Hobby = once/day max.
+- `'use workflow'` body must be deterministic — **all I/O inside `'use step'`** only.
+- BrightData is **async by default** — trigger → webhook → download. Integrate with Vercel hook to resume workflow.
+- BrightData default response format is NDJSON — always request `?format=json`.
+- Verify BrightData collector IDs (account + hashtag scrapers) in the dashboard before coding.
+- `withWorkflow(nextConfig)` required in `next.config.ts` or directives won't compile.
+- Middleware: exclude `/.well-known/workflow/` from any Next.js middleware matchers.
 
 ## Stack
 
-Next.js (App Router) · Vercel Workflows · BrightData · Claude API (claude-sonnet-4-6) · Vercel KV · Neon/Vercel Postgres · Web Push (VAPID) · Mubit AI (stretch)
+Next.js (App Router) · Vercel Workflows · BrightData Instagram · Claude API (claude-sonnet-4-6) · Neon/Vercel Postgres · Web Push (VAPID) · Mubit AI (stretch)
