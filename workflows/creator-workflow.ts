@@ -11,7 +11,7 @@ import { persistSnapshot } from '@/steps/persist-snapshot';
 import { sendPushNotification } from '@/steps/send-push';
 import type { RawProfile, RawHashtagFeed } from '@/lib/types';
 
-export async function creatorWorkflow(input: { creatorId: string }) {
+export async function creatorWorkflow(input: { creatorId: number; runId: number }) {
   'use workflow';
 
   const creatorData = await fetchCreatorData(input.creatorId);
@@ -36,7 +36,7 @@ export async function creatorWorkflow(input: { creatorId: string }) {
   const themes = await distilThemes({ profiles: rawProfiles, hashtagFeeds: rawHashtags });
   const ranked = await rankAgainstProfile(themes, creatorData.profile);
 
-  await persistSnapshot({ creatorId: input.creatorId, rankedThemes: ranked });
+  await persistSnapshot({ creatorId: input.creatorId, rankedThemes: ranked, runId: input.runId });
   await sendPushNotification(ranked, input.creatorId);
 
   return { creatorId: input.creatorId, themesCount: ranked.length };

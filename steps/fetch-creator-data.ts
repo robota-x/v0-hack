@@ -1,22 +1,30 @@
+import { getSql, type Creator, type FollowAccount, type FollowHashtag } from '@/lib/db';
 import type { CreatorData } from '@/lib/types';
 
-export async function fetchCreatorData(creatorId: string): Promise<CreatorData> {
+export async function fetchCreatorData(creatorId: number): Promise<CreatorData> {
   'use step';
 
-  // TODO: replace with DB query
-  // const row = await db.query('SELECT * FROM creator_profiles WHERE id = $1', [creatorId]);
-  console.log(`[fetchCreatorData] TODO: query DB for creatorId=${creatorId}`);
+  const sql = getSql();
+
+  const [creatorRows, accountRows, hashtagRows] = await Promise.all([
+    sql`SELECT * FROM creators WHERE id = ${creatorId}` as Promise<Creator[]>,
+    sql`SELECT * FROM follow_accounts WHERE creator_id = ${creatorId} ORDER BY created_at DESC` as Promise<FollowAccount[]>,
+    sql`SELECT * FROM follow_hashtags WHERE creator_id = ${creatorId} ORDER BY created_at DESC` as Promise<FollowHashtag[]>,
+  ]);
+
+  const creator = creatorRows[0];
+  if (!creator) throw new Error(`Creator ${creatorId} not found`);
 
   return {
     creatorId,
     followList: {
-      accounts: ['theaiagents', 'alliekmiller', 'realtryhackme', 'indie_hackers'],
-      hashtags: ['aiagents', 'llmops', 'agenticai', 'vibecoding'],
+      accounts: accountRows.map((r) => r.username),
+      hashtags: hashtagRows.map((r) => r.tag),
     },
     profile: {
-      interests: ['AI agents', 'LLM engineering', 'cybersecurity', 'indie hacking'],
-      style: 'technical deep-dives, builder updates, short-form explainers, demo clips',
-      niche: 'agentic AI development and hacking',
+      interests: creator.interests ?? [],
+      style: creator.style ?? '',
+      niche: creator.niche ?? '',
     },
   };
 }

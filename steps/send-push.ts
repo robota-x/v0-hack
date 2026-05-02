@@ -2,7 +2,7 @@ import type { RankedTheme } from '@/lib/types';
 
 export async function sendPushNotification(
   rankedThemes: RankedTheme[],
-  creatorId: string
+  creatorId: number
 ): Promise<void> {
   'use step';
 
