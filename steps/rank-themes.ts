@@ -1,5 +1,6 @@
 import { generateWithClaude } from '@/lib/ai';
 import type { Theme, RankedTheme, CreatorProfile } from '@/lib/types';
+import { z } from 'zod';
 
 const SYSTEM_PROMPT = `You are a content strategist helping creators identify which trends matter most to them.
 
@@ -8,7 +9,21 @@ Your job: rank themes by relevance to a specific creator's profile (niche, inter
 - whyItMatters (1 sentence: why this theme is relevant to their specific niche and goals)
 - whatToWatch (1 sentence: what specific signals or accounts they should monitor)
 
-Return ONLY a JSON array of ranked themes (sorted by relevanceScore descending), no markdown, no explanation.`;
+Return your analysis as a JSON object with a "rankedThemes" array, sorted by relevanceScore descending.`;
+
+const rankedThemeSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  evidence: z.array(z.string()),
+  strength: z.enum(['high', 'medium', 'low']),
+  relevanceScore: z.number().min(0).max(100),
+  whyItMatters: z.string(),
+  whatToWatch: z.string(),
+});
+
+const outputSchema = z.object({
+  rankedThemes: z.array(rankedThemeSchema),
+});
 
 export async function rankAgainstProfile(
   themes: Theme[],
@@ -30,19 +45,15 @@ ${JSON.stringify(themes, null, 2)}
 
 Rank these themes by relevance to this creator. Return the full theme objects with relevanceScore, whyItMatters, and whatToWatch added.`;
 
-  const responseText = await generateWithClaude({
+  const output = await generateWithClaude({
     system: SYSTEM_PROMPT,
     prompt,
+    schema: outputSchema,
   });
 
-  try {
-    const ranked = JSON.parse(responseText) as RankedTheme[];
-    console.log(
-      `[rankAgainstProfile] ranked ${ranked.length} themes, top score: ${ranked[0]?.relevanceScore ?? 'N/A'}`,
-    );
-    return ranked.sort((a, b) => b.relevanceScore - a.relevanceScore);
-  } catch (err) {
-    console.error('[rankAgainstProfile] failed to parse Claude response:', responseText);
-    throw new Error(`Claude response parsing failed: ${err}`);
-  }
+  console.log(
+    `[rankAgainstProfile] ranked ${output.rankedThemes.length} themes, top score: ${output.rankedThemes[0]?.relevanceScore ?? 'N/A'}`,
+  );
+
+  return output.rankedThemes.sort((a, b) => b.relevanceScore - a.relevanceScore);
 }

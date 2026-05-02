@@ -1,5 +1,6 @@
 import { anthropic } from '@ai-sdk/anthropic';
-import { generateText } from 'ai';
+import { generateText, Output } from 'ai';
+import { z } from 'zod';
 
 const MODEL = 'claude-sonnet-4.5-20250514';
 
@@ -9,17 +10,19 @@ function getApiKey(): string {
   return key;
 }
 
-export async function generateWithClaude(opts: {
+export async function generateWithClaude<T extends z.ZodType>(opts: {
   system: string;
   prompt: string;
-}): Promise<string> {
+  schema: T;
+}): Promise<z.infer<T>> {
   getApiKey(); // validates key exists
 
-  const { text } = await generateText({
+  const { output } = await generateText({
     model: anthropic(MODEL),
     system: opts.system,
     prompt: opts.prompt,
+    output: Output.object({ schema: opts.schema }),
   });
 
-  return text;
+  return output;
 }

@@ -1,17 +1,27 @@
 import { generateWithClaude } from '@/lib/ai';
 import type { RawScrapedData, Theme } from '@/lib/types';
+import { z } from 'zod';
 
 const SYSTEM_PROMPT = `You are a social media trend analyst. Your job is to extract dominant themes and patterns from Instagram data.
 
 A theme is a cohesive pattern across multiple posts — not just a single topic, but a format, angle, messaging style, or cultural moment that's surfacing repeatedly.
 
-Return your analysis as a JSON array of themes. Each theme must have:
+Return your analysis as a JSON object with a "themes" array. Each theme must have:
 - name (short, 3-5 words)
 - description (1-2 sentences explaining the pattern)
 - evidence (array of 2-4 human-readable pointers to supporting data, e.g., "3 of 5 top #gymtok posts reference morning routines")
-- strength ("high" if 50%+ of data supports it, "medium" if 25-50%, "low" if 10-25%)
+- strength ("high" if 50%+ of data supports it, "medium" if 25-50%, "low" if 10-25%)`;
 
-Return ONLY the JSON array, no markdown formatting, no explanation.`;
+const themeSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  evidence: z.array(z.string()),
+  strength: z.enum(['high', 'medium', 'low']),
+});
+
+const outputSchema = z.object({
+  themes: z.array(themeSchema),
+});
 
 export async function distilThemes(rawData: RawScrapedData): Promise<Theme[]> {
   'use step';
@@ -54,17 +64,12 @@ export async function distilThemes(rawData: RawScrapedData): Promise<Theme[]> {
 
   const prompt = `Analyze this Instagram data snapshot and extract 3-5 dominant themes:\n\n${JSON.stringify(compactData, null, 2)}`;
 
-  const responseText = await generateWithClaude({
+  const output = await generateWithClaude({
     system: SYSTEM_PROMPT,
     prompt,
+    schema: outputSchema,
   });
 
-  try {
-    const themes = JSON.parse(responseText) as Theme[];
-    console.log(`[distilThemes] extracted ${themes.length} themes`);
-    return themes;
-  } catch (err) {
-    console.error('[distilThemes] failed to parse Claude response:', responseText);
-    throw new Error(`Claude response parsing failed: ${err}`);
-  }
+  console.log(`[distilThemes] extracted ${output.themes.length} themes`);
+  return output.themes;
 }

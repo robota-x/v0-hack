@@ -9,9 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.2.12",
+    "@ai-sdk/anthropic": "^3.0.74",
     "@neondatabase/serverless": "^0.10.4",
-    "ai": "^4.3.19",
+    "ai": "^6.0.174",
     "clsx": "^2.1.1",
     "lucide-react": "^0.462.0",
     "next": "^15.1.0",
@@ -19,7 +19,8 @@
     "react-dom": "^19.0.0",
     "swr": "^2.3.0",
     "tailwind-merge": "^2.5.5",
-    "workflow": "*"
+    "workflow": "*",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
