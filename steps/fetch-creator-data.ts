@@ -10,13 +10,13 @@ export async function fetchCreatorData(creatorId: string): Promise<CreatorData> 
   return {
     creatorId,
     followList: {
-      accounts: ['fitness_with_mike', 'gymshark', 'cbum'],
-      hashtags: ['gymtok', 'morningroutine', 'fitnessmotivation', 'gains'],
+      accounts: ['theaiagents', 'alliekmiller', 'realtryhackme', 'indie_hackers'],
+      hashtags: ['aiagents', 'llmops', 'agenticai', 'vibecoding'],
     },
     profile: {
-      interests: ['gym workouts', 'morning routines', 'nutrition', 'body transformation'],
-      style: 'high-energy, motivational, short-form 15–30s reels, trending audio',
-      niche: 'fitness and gym lifestyle',
+      interests: ['AI agents', 'LLM engineering', 'cybersecurity', 'indie hacking'],
+      style: 'technical deep-dives, builder updates, short-form explainers, demo clips',
+      niche: 'agentic AI development and hacking',
     },
   };
 }
