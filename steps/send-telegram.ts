@@ -5,7 +5,7 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 export async function sendTelegramNotification(
   rankedThemes: RankedTheme[],
-  creatorId: string
+  creatorId: number
 ): Promise<{ success: boolean; error?: string }> {
   'use step';
 
@@ -49,7 +49,7 @@ export async function sendTelegramNotification(
   }
 }
 
-function formatTelegramMessage(themes: RankedTheme[], creatorId: string): string {
+function formatTelegramMessage(themes: RankedTheme[], creatorId: number): string {
   const header = `<b>Trending in Your Sphere</b>\n<i>Creator: ${creatorId}</i>\n\n`;
   
   const themesList = themes

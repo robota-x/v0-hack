@@ -7,9 +7,9 @@ export async function fetchCreatorData(creatorId: number): Promise<CreatorData> 
   const sql = getSql();
 
   const [creatorRows, accountRows, hashtagRows] = await Promise.all([
-    sql`SELECT * FROM creators WHERE id = ${creatorId}` as Promise<Creator[]>,
-    sql`SELECT * FROM follow_accounts WHERE creator_id = ${creatorId} ORDER BY created_at DESC` as Promise<FollowAccount[]>,
-    sql`SELECT * FROM follow_hashtags WHERE creator_id = ${creatorId} ORDER BY created_at DESC` as Promise<FollowHashtag[]>,
+    sql`SELECT * FROM creators WHERE id = ${creatorId}` as unknown as Promise<Creator[]>,
+    sql`SELECT * FROM follow_accounts WHERE creator_id = ${creatorId} ORDER BY created_at DESC` as unknown as Promise<FollowAccount[]>,
+    sql`SELECT * FROM follow_hashtags WHERE creator_id = ${creatorId} ORDER BY created_at DESC` as unknown as Promise<FollowHashtag[]>,
   ]);
 
   const creator = creatorRows[0];

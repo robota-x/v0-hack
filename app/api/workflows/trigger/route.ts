@@ -12,7 +12,7 @@ export async function POST() {
     INSERT INTO workflow_runs (creator_id, status, step)
     VALUES (${DEMO_CREATOR_ID}, 'queued', 'fetchCreatorData')
     RETURNING id, creator_id, status, step, started_at
-  `) as Array<{
+  `) as unknown as Array<{
     id: number;
     creator_id: number;
     status: string;

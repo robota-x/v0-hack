@@ -1,54 +1,70 @@
+import { generateWithClaude } from '@/lib/ai';
 import type { RawScrapedData, Theme } from '@/lib/types';
+
+const SYSTEM_PROMPT = `You are a social media trend analyst. Your job is to extract dominant themes and patterns from Instagram data.
+
+A theme is a cohesive pattern across multiple posts — not just a single topic, but a format, angle, messaging style, or cultural moment that's surfacing repeatedly.
+
+Return your analysis as a JSON array of themes. Each theme must have:
+- name (short, 3-5 words)
+- description (1-2 sentences explaining the pattern)
+- evidence (array of 2-4 human-readable pointers to supporting data, e.g., "3 of 5 top #gymtok posts reference morning routines")
+- strength ("high" if 50%+ of data supports it, "medium" if 25-50%, "low" if 10-25%)
+
+Return ONLY the JSON array, no markdown formatting, no explanation.`;
 
 export async function distilThemes(rawData: RawScrapedData): Promise<Theme[]> {
   'use step';
 
   const allPosts = [
-    ...rawData.profiles.flatMap(p => p.recentPosts),
-    ...rawData.hashtagFeeds.flatMap(h => h.topPosts),
+    ...rawData.profiles.flatMap((p) => p.recentPosts),
+    ...rawData.hashtagFeeds.flatMap((h) => h.topPosts),
   ];
 
-  // TODO: replace with Claude API call
-  // const response = await anthropic.messages.create({
-  //   model: 'claude-sonnet-4-6',
-  //   system: 'You are a social media analyst. Extract dominant themes from this Instagram data snapshot.',
-  //   messages: [{ role: 'user', content: JSON.stringify(rawData) }],
-  // });
   console.log(
-    `[distilThemes] TODO: call Claude API with ${allPosts.length} posts across ` +
-    `${rawData.profiles.length} profiles and ${rawData.hashtagFeeds.length} hashtag feeds`
+    `[distilThemes] calling Claude with ${allPosts.length} posts across ` +
+      `${rawData.profiles.length} profiles and ${rawData.hashtagFeeds.length} hashtag feeds`,
   );
 
-  return [
-    {
-      name: 'Early Morning Workout Culture',
-      description:
-        '5am/6am gym content is dominating feeds — high-performing videos frame the early session as identity-defining, not just exercise.',
-      evidence: [
-        '#morningroutine top post: 3.1M views (@dailygainz)',
-        '#gymtok: 2 of 2 top posts reference morning sessions',
-        '@fitness_with_mike recent reel: 310K views on morning routine',
-      ],
-      strength: 'high',
-    },
-    {
-      name: 'Consistency Over Motivation Messaging',
-      description:
-        'POV-style and direct-address videos about showing up despite not feeling like it are outperforming hype content.',
-      evidence: [
-        '"POV: you actually showed up today" — 1.1M views (#gymtok)',
-        '@gymshark "Push harder than yesterday" — 1.24M views',
-      ],
-      strength: 'high',
-    },
-    {
-      name: 'Transformation Proof Content',
-      description:
-        'Before/after and progress-tracking formats generate strong saves and shares across fitness hashtags.',
-      evidence: [
-        '#gains top posts skew toward body transformation clips',
-      ],
-      strength: 'medium',
-    },
-  ];
+  // Truncate captions to stay within token budget (each caption can be 2200 chars)
+  const compactData = {
+    profiles: rawData.profiles.map((p) => ({
+      username: p.username,
+      followersCount: p.followersCount,
+      postsCount: p.postsCount,
+      recentPosts: p.recentPosts.slice(0, 10).map((post) => ({
+        caption: post.caption.slice(0, 300),
+        likesCount: post.likesCount,
+        videoViewCount: post.videoViewCount,
+        isVideo: post.isVideo,
+      })),
+    })),
+    hashtagFeeds: rawData.hashtagFeeds.map((h) => ({
+      hashtag: h.hashtag,
+      mediaCount: h.mediaCount,
+      topPosts: h.topPosts.slice(0, 10).map((post) => ({
+        caption: post.caption.slice(0, 300),
+        likesCount: post.likesCount,
+        videoViewCount: post.videoViewCount,
+        isVideo: post.isVideo,
+        ownerUsername: post.ownerUsername,
+      })),
+    })),
+  };
+
+  const prompt = `Analyze this Instagram data snapshot and extract 3-5 dominant themes:\n\n${JSON.stringify(compactData, null, 2)}`;
+
+  const responseText = await generateWithClaude({
+    system: SYSTEM_PROMPT,
+    prompt,
+  });
+
+  try {
+    const themes = JSON.parse(responseText) as Theme[];
+    console.log(`[distilThemes] extracted ${themes.length} themes`);
+    return themes;
+  } catch (err) {
+    console.error('[distilThemes] failed to parse Claude response:', responseText);
+    throw new Error(`Claude response parsing failed: ${err}`);
+  }
 }

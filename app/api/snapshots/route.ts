@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     INSERT INTO snapshots (creator_id, themes, summary)
     VALUES (${creatorId}, ${JSON.stringify(themes)}::jsonb, ${summary})
     RETURNING id, creator_id, themes, summary, created_at
-  `) as Snapshot[];
+  `) as unknown as Snapshot[];
 
   return NextResponse.json(rows[0], { status: 201 });
 }

@@ -15,14 +15,14 @@ export async function GET() {
     FROM follow_accounts
     WHERE creator_id = ${DEMO_CREATOR_ID}
     ORDER BY created_at DESC
-  `) as FollowAccount[];
+  `) as unknown as FollowAccount[];
 
   const hashtags = (await sql`
     SELECT id, creator_id, tag, created_at
     FROM follow_hashtags
     WHERE creator_id = ${DEMO_CREATOR_ID}
     ORDER BY created_at DESC
-  `) as FollowHashtag[];
+  `) as unknown as FollowHashtag[];
 
   return NextResponse.json({ accounts, hashtags });
 }

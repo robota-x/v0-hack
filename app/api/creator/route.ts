@@ -10,7 +10,7 @@ export async function GET() {
     FROM creators
     WHERE id = ${DEMO_CREATOR_ID}
     LIMIT 1
-  `) as Creator[];
+  `) as unknown as Creator[];
 
   if (!rows[0]) {
     return NextResponse.json({ error: "creator not found" }, { status: 404 });
@@ -45,7 +45,7 @@ export async function PATCH(req: Request) {
       updated_at = NOW()
     WHERE id = ${DEMO_CREATOR_ID}
     RETURNING id, name, niche, interests, style, onboarded, created_at, updated_at
-  `) as Creator[];
+  `) as unknown as Creator[];
 
   return NextResponse.json(rows[0]);
 }
