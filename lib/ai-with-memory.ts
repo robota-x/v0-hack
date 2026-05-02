@@ -8,7 +8,7 @@
  * to standard Claude API calls without memory augmentation.
  */
 
-import { anthropic } from '@ai-sdk/anthropic';
+import { gateway } from '@ai-sdk/gateway';
 import { generateText, Output } from 'ai';
 import type { z } from 'zod';
 
@@ -25,9 +25,9 @@ try {
 
 
 /**
- * Generate structured output with Claude, augmented by Mubit's memory layer.
+ * Generate structured output with Claude via Vercel AI Gateway, augmented by Mubit's memory layer.
  *
- * This is a simplified API matching generateWithClaude but with memory support.
+ * Uses Vercel AI Gateway (no ANTHROPIC_API_KEY needed on Vercel - uses OIDC tokens).
  * Gracefully degrades to standard Claude calls when Mubit is unavailable.
  *
  * @param opts.system - System prompt
@@ -45,7 +45,8 @@ export async function generateWithMemory<T extends z.ZodType>(opts: {
 }): Promise<z.infer<T>> {
   const { system, prompt, schema, creatorId, agentId } = opts;
 
-  const baseModel = anthropic('claude-sonnet-4-6');
+  // Use Vercel AI Gateway (authenticates via OIDC token on Vercel)
+  const baseModel = gateway('anthropic/claude-sonnet-4.6');
   let model = baseModel;
 
   // Check if Mubit is available and configured

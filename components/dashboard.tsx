@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { Sparkles, RefreshCw, Clock } from "lucide-react";
+import { ChevronDown, Clock, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { fetcher } from "@/lib/fetcher";
 import { timeAgo } from "@/lib/utils";
@@ -18,85 +17,57 @@ export function Dashboard({
   creator: Creator;
   snapshot: Snapshot | null;
 }) {
-  const { data, mutate } = useSWR<{ snapshot: Snapshot | null }>(
+  const { data } = useSWR<{ snapshot: Snapshot | null }>(
     "/api/snapshots/latest",
     fetcher,
     { fallbackData: { snapshot: initial } },
   );
   const snapshot = data?.snapshot ?? initial;
-  const [triggering, setTriggering] = useState(false);
-
-  async function handleTrigger() {
-    setTriggering(true);
-    try {
-      await fetch("/api/workflows/trigger", { method: "POST" });
-      await mutate();
-    } finally {
-      setTriggering(false);
-    }
-  }
 
   const themes = (snapshot?.themes ?? []) as SnapshotTheme[];
+  const topThemes = themes.slice(0, 3);
+  const [expandedCards, setExpandedCards] = useState<number[]>([]);
   const firstName = creator.name?.split(" ")[0] ?? "there";
 
+  function toggleCard(index: number) {
+    setExpandedCards((current) =>
+      current.includes(index)
+        ? current.filter((value) => value !== index)
+        : [...current, index],
+    );
+  }
+
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Today's snapshot"
         title={`Hey ${firstName} — here's what's stirring.`}
         description={
           snapshot
             ? `Your last sweep was ${timeAgo(snapshot.created_at)}.`
-            : "No snapshot yet. Run a sweep to see what's trending in your sphere."
-        }
-        action={
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={handleTrigger}
-            disabled={triggering}
-            aria-label="Run sweep"
-          >
-            <RefreshCw
-              size={14}
-              className={triggering ? "animate-spin" : ""}
-              aria-hidden="true"
-            />
-            {triggering ? "Running" : "Sweep"}
-          </Button>
+            : "No snapshot yet. The feed appears after a secret workflow run."
         }
       />
 
-      <div className="space-y-3 px-5">
-        {snapshot && snapshot.summary ? (
-          <Card className="border-accent/40 bg-accent/15">
-            <CardContent className="flex gap-3">
-              <Sparkles
-                size={18}
-                className="mt-0.5 shrink-0 text-accent-foreground"
-                aria-hidden="true"
-              />
-              <p className="text-sm leading-relaxed text-foreground">
-                {snapshot.summary}
-              </p>
-            </CardContent>
-          </Card>
-        ) : null}
-
+      <div className="space-y-4 px-2">
         {themes.length === 0 ? (
-          <EmptyState onTrigger={handleTrigger} triggering={triggering} />
+          <EmptyState />
         ) : (
-          <ol className="space-y-3">
-            {themes.map((theme, i) => (
+          <ol className="space-y-4">
+            {topThemes.map((theme, i) => (
               <li key={`${theme.title}-${i}`}>
-                <ThemeCard theme={theme} />
+                <ThemeCard
+                  theme={theme}
+                  expanded={expandedCards.includes(i)}
+                  onToggle={() => toggleCard(i)}
+                />
               </li>
             ))}
           </ol>
         )}
 
-        {snapshot ? (
-          <p className="flex items-center justify-center gap-1.5 pt-4 text-xs text-muted-foreground">
+        {snapshot && topThemes.length > 0 ? (
+          <p className="flex items-center justify-center gap-1.5 pt-3 text-xs font-bold uppercase tracking-wider text-[#1e1b4b]/70">
             <Clock size={12} aria-hidden="true" />
             Updated {timeAgo(snapshot.created_at)}
           </p>
@@ -106,67 +77,79 @@ export function Dashboard({
   );
 }
 
-function ThemeCard({ theme }: { theme: SnapshotTheme }) {
+function ThemeCard({
+  theme,
+  expanded,
+  onToggle,
+}: {
+  theme: SnapshotTheme;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <Card>
-      <CardContent className="space-y-2">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="font-display text-xl text-primary">
-              {String(theme.rank).padStart(2, "0")}
-            </span>
-            <h2 className="font-display text-lg leading-snug text-foreground text-balance">
+    <Card className="neo-shadow-hover">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full text-left"
+        aria-expanded={expanded}
+      >
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-lg font-bold leading-snug text-[#1e1b4b] text-balance">
               {theme.title}
             </h2>
+            <ChevronDown
+              size={18}
+              className={expanded ? "rotate-180 text-[#1e1b4b]" : "text-[#1e1b4b]"}
+              aria-hidden="true"
+            />
           </div>
-          {typeof theme.source_count === "number" ? (
-            <Badge tone="primary">{theme.source_count} sources</Badge>
+          {expanded ? (
+            <>
+              {typeof theme.source_count === "number" ? (
+                <Badge
+                  tone="destructive"
+                  className="shrink-0 whitespace-nowrap px-2 py-0.5 text-[10px]"
+                >
+                  {theme.source_count} sources
+                </Badge>
+              ) : null}
+              <p className="text-sm leading-relaxed text-on-surface-variant text-pretty">
+                {theme.summary}
+              </p>
+              {theme.why_it_matters ? (
+                <p className="rounded-xl border-2 border-[#1e1b4b] bg-[#eef2ff] px-3 py-2 text-xs leading-relaxed text-[#1e1b4b]">
+                  <span className="font-bold uppercase tracking-wide">
+                    Why for you:{" "}
+                  </span>
+                  {theme.why_it_matters}
+                </p>
+              ) : null}
+            </>
           ) : null}
-        </div>
-        <p className="text-sm leading-relaxed text-muted-foreground text-pretty">
-          {theme.summary}
-        </p>
-        {theme.why_it_matters ? (
-          <p className="rounded-md bg-muted px-3 py-2 text-xs leading-relaxed text-foreground">
-            <span className="font-medium">Why for you: </span>
-            {theme.why_it_matters}
-          </p>
-        ) : null}
-      </CardContent>
+        </CardContent>
+      </button>
     </Card>
   );
 }
 
-function EmptyState({
-  onTrigger,
-  triggering,
-}: {
-  onTrigger: () => void;
-  triggering: boolean;
-}) {
+function EmptyState() {
   return (
-    <Card className="border-dashed">
+    <Card className="border-dashed border-[#1e1b4b]">
       <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-        <div className="grid size-12 place-items-center rounded-full bg-primary/15 text-primary">
+        <div className="grid size-12 place-items-center rounded-full border-2 border-[#1e1b4b] bg-[#fef08a] text-[#1e1b4b]">
           <Sparkles size={22} aria-hidden="true" />
         </div>
         <div>
-          <h2 className="font-display text-lg text-foreground">
-            Your first sweep awaits
+          <h2 className="font-display text-lg font-extrabold text-[#1e1b4b]">
+            Waiting for workflow output
           </h2>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground text-pretty">
-            We'll scan the accounts and tags you follow, then surface the themes
-            that matter to your niche.
+          <p className="mt-1 text-sm leading-relaxed text-on-surface-variant text-pretty">
+            This dashboard will populate after the secret workflow URL runs and
+            writes a snapshot.
           </p>
         </div>
-        <Button onClick={onTrigger} disabled={triggering}>
-          <RefreshCw
-            size={14}
-            className={triggering ? "animate-spin" : ""}
-            aria-hidden="true"
-          />
-          {triggering ? "Running" : "Run first sweep"}
-        </Button>
       </CardContent>
     </Card>
   );

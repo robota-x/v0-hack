@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-type Tone = "neutral" | "primary" | "accent";
+type Tone = "neutral" | "primary" | "accent" | "destructive";
 
 export function Badge({
   tone = "neutral",
@@ -9,14 +9,15 @@ export function Badge({
   ...props
 }: React.HTMLAttributes<HTMLSpanElement> & { tone?: Tone }) {
   const tones: Record<Tone, string> = {
-    neutral: "bg-muted text-foreground",
-    primary: "bg-primary/15 text-primary",
-    accent: "bg-accent/30 text-accent-foreground",
+    neutral: "border-[#1e1b4b] bg-white/80 text-[#1e1b4b]",
+    primary: "border-[#1e1b4b] bg-[#a3e635] text-[#1e1b4b]",
+    accent: "border-[#1e1b4b] bg-[#fef08a] text-[#1e1b4b]",
+    destructive: "border-[#1e1b4b] bg-[#f43f5e] text-white",
   };
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium",
+        "inline-flex items-center gap-1 rounded-full border-2 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider",
         tones[tone],
         className,
       )}

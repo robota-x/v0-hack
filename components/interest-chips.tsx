@@ -51,7 +51,7 @@ export function InterestChips({
               <button
                 type="button"
                 onClick={() => remove(item)}
-                className="group inline-flex items-center gap-1 rounded-full bg-accent/30 px-2.5 py-1 text-xs font-medium text-accent-foreground hover:bg-accent/50"
+                className="group inline-flex items-center gap-1 rounded-full border-2 border-[#1e1b4b] bg-[#fef08a] px-2.5 py-1 text-xs font-bold text-[#1e1b4b] hover:bg-[#ffe975]"
                 aria-label={`Remove ${item}`}
               >
                 {item}

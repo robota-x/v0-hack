@@ -14,18 +14,19 @@ export interface ButtonProps
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    "bg-primary text-primary-foreground hover:opacity-90 active:opacity-80",
+    "neo-shadow-hover bg-[#a3e635] text-[#1e1b4b] border-[#1e1b4b] shadow-[2px_2px_0px_0px_rgba(30,27,75,1)]",
   secondary:
-    "bg-muted text-foreground hover:bg-[color-mix(in_oklab,var(--color-muted)_70%,var(--color-border))]",
-  ghost: "bg-transparent text-foreground hover:bg-muted",
+    "neo-shadow-hover bg-[#fef08a] text-[#1e1b4b] border-[#1e1b4b] shadow-[2px_2px_0px_0px_rgba(30,27,75,1)]",
+  ghost:
+    "bg-white/75 text-[#1e1b4b] border-[#1e1b4b] hover:bg-white/90 hover:-translate-y-0.5",
   destructive:
-    "bg-destructive text-destructive-foreground hover:opacity-90 active:opacity-80",
+    "neo-shadow-hover bg-[#f43f5e] text-white border-[#1e1b4b] shadow-[2px_2px_0px_0px_rgba(30,27,75,1)]",
 };
 
 const sizeClasses: Record<Size, string> = {
-  sm: "h-9 px-3 text-sm rounded-md",
-  md: "h-11 px-4 text-sm rounded-lg",
-  lg: "h-12 px-5 text-base rounded-lg",
+  sm: "h-9 rounded-lg px-3 text-xs",
+  md: "h-11 rounded-xl px-4 text-sm",
+  lg: "h-12 rounded-xl px-5 text-base",
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -34,7 +35,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center gap-2 font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+          "inline-flex items-center justify-center gap-2 border-2 font-extrabold uppercase tracking-wider transition-all disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f43f5e]",
           variantClasses[variant],
           sizeClasses[size],
           className,

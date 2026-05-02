@@ -1,27 +1,29 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #fbf8f3;
-  --color-foreground: #1f2937;
-  --color-muted: #f0eae0;
-  --color-muted-foreground: #6b7280;
-  --color-border: #e8dfd3;
-  --color-card: #ffffff;
-  --color-card-foreground: #1f2937;
-  --color-primary: #e07856;
-  --color-primary-foreground: #ffffff;
-  --color-accent: #9cc5a1;
-  --color-accent-foreground: #1f2937;
-  --color-destructive: #c14545;
+  --color-background: #38bdf8;
+  --color-foreground: #1d1b20;
+  --color-on-surface: #1d1b20;
+  --color-on-surface-variant: #494551;
+  --color-muted: #eef2ff;
+  --color-muted-foreground: #4b5563;
+  --color-border: #1e1b4b;
+  --color-card: rgba(255, 255, 255, 0.9);
+  --color-card-foreground: #1d1b20;
+  --color-primary: #a3e635;
+  --color-primary-foreground: #1e1b4b;
+  --color-accent: #fef08a;
+  --color-accent-foreground: #1e1b4b;
+  --color-destructive: #f43f5e;
   --color-destructive-foreground: #ffffff;
 
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1.5rem;
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
@@ -38,6 +40,29 @@
     min-height: 100dvh;
   }
   ::selection {
-    background-color: color-mix(in oklab, var(--color-primary) 25%, transparent);
+    background-color: #a3e635;
+    color: #1e1b4b;
+  }
+}
+
+@layer components {
+  .neo-glass {
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(12px);
+    border: 2px solid #1e1b4b;
+    border-radius: 24px;
+  }
+
+  .neo-shadow {
+    box-shadow: 4px 4px 0 0 #1e1b4b;
+  }
+
+  .neo-shadow-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .neo-shadow-hover:hover {
+    box-shadow: 4px 4px 0 0 #1e1b4b;
+    transform: translate(-2px, -2px);
   }
 }

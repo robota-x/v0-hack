@@ -40,10 +40,10 @@ export default function SecretRunPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-8 p-8">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-8 p-4">
       <div className="text-center">
         <p className="mb-2 text-6xl">🤫</p>
-        <h1 className="font-serif text-2xl font-medium text-foreground/70">
+        <h1 className="font-display text-2xl font-extrabold text-[#1e1b4b]">
           Secret Hackathon Controls
         </h1>
       </div>
@@ -52,7 +52,7 @@ export default function SecretRunPage() {
         onClick={triggerWorkflow}
         disabled={isLoading}
         size="lg"
-        className="h-40 w-40 rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-2xl font-bold text-white shadow-2xl transition-all hover:scale-105 hover:from-amber-500 hover:via-orange-600 hover:to-rose-600 active:scale-95 disabled:opacity-70"
+        className="neo-shadow-hover h-40 w-40 rounded-full border-2 border-black bg-[#a3e635] text-2xl font-black text-[#1e1b4b] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:scale-95 disabled:opacity-70"
       >
         {isLoading ? (
           <span className="animate-pulse">🚀</span>
@@ -66,10 +66,10 @@ export default function SecretRunPage() {
 
       {result && (
         <div
-          className={`rounded-xl px-6 py-4 text-center ${
+          className={`neo-glass px-6 py-4 text-center ${
             result.success
-              ? "bg-emerald-100 text-emerald-800"
-              : "bg-rose-100 text-rose-800"
+              ? "text-[#1e1b4b]"
+              : "bg-[#ffdce3] text-[#9f1239]"
           }`}
         >
           <p className="text-lg font-medium">
@@ -78,7 +78,7 @@ export default function SecretRunPage() {
         </div>
       )}
 
-      <p className="text-sm text-foreground/40">
+      <p className="text-sm font-semibold text-[#1e1b4b]/70">
         This page is not linked anywhere. You found the secret! 🎉
       </p>
     </div>
