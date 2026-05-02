@@ -1,10 +1,12 @@
-import { generateWithClaude } from '@/lib/ai';
+import { generateWithMemory } from '@/lib/ai-with-memory';
 import type { RawScrapedData, Theme } from '@/lib/types';
 import { z } from 'zod';
 
 const SYSTEM_PROMPT = `You are a social media trend analyst. Your job is to extract dominant themes and patterns from Instagram data.
 
 A theme is a cohesive pattern across multiple posts — not just a single topic, but a format, angle, messaging style, or cultural moment that's surfacing repeatedly.
+
+IMPORTANT: If you receive memory context about previously surfaced themes, prioritize NEW themes not already covered. Avoid repeating themes from recent analysis.
 
 Return your analysis as a JSON object with a "themes" array. Each theme must have:
 - name (short, 3-5 words)
@@ -23,7 +25,10 @@ const outputSchema = z.object({
   themes: z.array(themeSchema),
 });
 
-export async function distilThemes(rawData: RawScrapedData): Promise<Theme[]> {
+export async function distilThemes(
+  rawData: RawScrapedData,
+  creatorId: number,
+): Promise<Theme[]> {
   'use step';
 
   const allPosts = [
@@ -32,7 +37,7 @@ export async function distilThemes(rawData: RawScrapedData): Promise<Theme[]> {
   ];
 
   console.log(
-    `[distilThemes] calling Claude with ${allPosts.length} posts across ` +
+    `[distilThemes] creatorId=${creatorId}, calling Claude with ${allPosts.length} posts across ` +
       `${rawData.profiles.length} profiles and ${rawData.hashtagFeeds.length} hashtag feeds`,
   );
 
@@ -64,10 +69,12 @@ export async function distilThemes(rawData: RawScrapedData): Promise<Theme[]> {
 
   const prompt = `Analyze this Instagram data snapshot and extract 3-5 dominant themes:\n\n${JSON.stringify(compactData, null, 2)}`;
 
-  const output = await generateWithClaude({
+  const output = await generateWithMemory({
     system: SYSTEM_PROMPT,
     prompt,
     schema: outputSchema,
+    creatorId,
+    agentId: 'distil',
   });
 
   console.log(`[distilThemes] extracted ${output.themes.length} themes`);
