@@ -11,7 +11,7 @@ export async function GET() {
     WHERE creator_id = ${DEMO_CREATOR_ID}
     ORDER BY started_at DESC
     LIMIT 1
-  `) as Array<{
+  `) as unknown as Array<{
     id: number;
     status: string;
     step: string | null;

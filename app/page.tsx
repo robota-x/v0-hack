@@ -24,7 +24,7 @@ export default async function HomePage() {
     WHERE creator_id = ${DEMO_CREATOR_ID}
     ORDER BY created_at DESC
     LIMIT 1
-  `) as Snapshot[];
+  `) as unknown as Snapshot[];
 
   return <Dashboard creator={creator} snapshot={snapshots[0] ?? null} />;
 }
