@@ -1,0 +1,30 @@
+{
+  "name": "creator-companion",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node --env-file-if-exists=/vercel/share/.env.project --env-file-if-exists=.env.local node_modules/next/dist/bin/next dev",
+    "build": "node --env-file-if-exists=/vercel/share/.env.project --env-file-if-exists=.env.local node_modules/next/dist/bin/next build",
+    "start": "node --env-file-if-exists=/vercel/share/.env.project --env-file-if-exists=.env.local node_modules/next/dist/bin/next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "swr": "^2.3.0",
+    "lucide-react": "^0.462.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.5.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "tailwindcss": "^4.0.0",
+    "postcss": "^8.4.49",
+    "typescript": "^5.7.2"
+  }
+}
