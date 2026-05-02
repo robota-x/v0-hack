@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { getSql, DEMO_CREATOR_ID, type Creator } from "@/lib/db";
 import { OnboardingFlow } from "@/components/onboarding-flow";
 
@@ -13,9 +12,25 @@ export default async function OnboardingPage() {
     LIMIT 1
   `) as Creator[];
 
-  if (creators[0]?.onboarded) {
-    redirect("/");
-  }
+  const accounts = (await sql`
+    SELECT username
+    FROM follow_accounts
+    WHERE creator_id = ${DEMO_CREATOR_ID}
+    ORDER BY created_at ASC
+  `) as { username: string }[];
 
-  return <OnboardingFlow initial={creators[0]} />;
+  const hashtags = (await sql`
+    SELECT tag
+    FROM follow_hashtags
+    WHERE creator_id = ${DEMO_CREATOR_ID}
+    ORDER BY created_at ASC
+  `) as { tag: string }[];
+
+  return (
+    <OnboardingFlow
+      initial={creators[0]}
+      initialAccounts={accounts.map((a) => a.username)}
+      initialHashtags={hashtags.map((h) => h.tag)}
+    />
+  );
 }
