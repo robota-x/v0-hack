@@ -8,8 +8,8 @@ import { fetchCreatorData } from '@/steps/fetch-creator-data';
 import { distilThemes } from '@/steps/distil-themes';
 import { rankAgainstProfile } from '@/steps/rank-themes';
 import { persistSnapshot } from '@/steps/persist-snapshot';
-import { sendPushNotification } from '@/steps/send-push';
 import { sendTelegramNotification } from '@/steps/send-telegram';
+import { updateWebsite } from '@/steps/update-website';
 import type { RawProfile, RawHashtagFeed } from '@/lib/types';
 
 export async function creatorWorkflow(input: { creatorId: number; runId: number }) {
@@ -39,9 +39,11 @@ export async function creatorWorkflow(input: { creatorId: number; runId: number 
 
   await persistSnapshot({ creatorId: input.creatorId, rankedThemes: ranked, runId: input.runId });
   
-  // Send notifications (Telegram for hackathon demo, Web Push for future)
-  await sendTelegramNotification(ranked, input.creatorId);
-  await sendPushNotification(ranked, input.creatorId);
+  // Notify in parallel: Telegram for hackathon demo, website refresh for dashboard
+  await Promise.all([
+    sendTelegramNotification(ranked, input.creatorId),
+    updateWebsite(ranked, input.creatorId),
+  ]);
 
   return { creatorId: input.creatorId, themesCount: ranked.length };
 }
