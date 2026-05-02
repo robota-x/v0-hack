@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { sql, DEMO_CREATOR_ID, type FollowAccount } from "@/lib/db";
+import { getSql, DEMO_CREATOR_ID, type FollowAccount } from "@/lib/db";
 import { normalizeUsername } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const sql = getSql();
   const body = (await req.json()) as { username?: string };
   const username = normalizeUsername(body.username ?? "");
   if (!username) {

@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { sql, DEMO_CREATOR_ID, type Creator } from "@/lib/db";
+import { getSql, DEMO_CREATOR_ID, type Creator } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const sql = getSql();
   const rows = (await sql`
     SELECT id, name, niche, interests, style, onboarded, created_at, updated_at
     FROM creators
@@ -18,6 +19,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
+  const sql = getSql();
   const body = (await req.json()) as Partial<{
     name: string;
     niche: string;

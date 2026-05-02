@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import {
-  sql,
+  getSql,
   DEMO_CREATOR_ID,
   type FollowAccount,
   type FollowHashtag,
@@ -9,6 +9,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const sql = getSql();
   const accounts = (await sql`
     SELECT id, creator_id, username, created_at
     FROM follow_accounts

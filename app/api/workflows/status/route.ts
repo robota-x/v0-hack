@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { sql, DEMO_CREATOR_ID } from "@/lib/db";
+import { getSql, DEMO_CREATOR_ID } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const sql = getSql();
   const rows = (await sql`
     SELECT id, status, step, error, started_at, completed_at
     FROM workflow_runs

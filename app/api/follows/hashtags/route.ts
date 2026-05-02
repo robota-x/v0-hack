@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { sql, DEMO_CREATOR_ID, type FollowHashtag } from "@/lib/db";
+import { getSql, DEMO_CREATOR_ID, type FollowHashtag } from "@/lib/db";
 import { normalizeHashtag } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const sql = getSql();
   const body = (await req.json()) as { tag?: string };
   const tag = normalizeHashtag(body.tag ?? "");
   if (!tag) {

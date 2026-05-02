@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql, DEMO_CREATOR_ID } from "@/lib/db";
+import { getSql, DEMO_CREATOR_ID } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +7,7 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const sql = getSql();
   const { id } = await params;
   const numeric = Number.parseInt(id, 10);
   if (!Number.isFinite(numeric)) {

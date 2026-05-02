@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { sql, DEMO_CREATOR_ID, type Snapshot } from "@/lib/db";
+import { getSql, DEMO_CREATOR_ID, type Snapshot } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const sql = getSql();
   const rows = (await sql`
     SELECT id, creator_id, themes, summary, created_at
     FROM snapshots

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql, DEMO_CREATOR_ID } from "@/lib/db";
+import { getSql, DEMO_CREATOR_ID } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 // For now this just records a workflow_run row so the UI can show "queued" state,
 // and (when implemented) the workflow runner will pick it up or be invoked here directly.
 export async function POST() {
+  const sql = getSql();
   const rows = (await sql`
     INSERT INTO workflow_runs (creator_id, status, step)
     VALUES (${DEMO_CREATOR_ID}, 'queued', 'fetchCreatorData')

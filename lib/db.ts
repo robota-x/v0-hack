@@ -1,10 +1,17 @@
 import { neon } from "@neondatabase/serverless";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set");
-}
+// Lazy initialization: only throw if DATABASE_URL is missing when sql is actually called
+let _sql: ReturnType<typeof neon> | null = null;
 
-export const sql = neon(process.env.DATABASE_URL);
+export function getSql() {
+  if (!_sql) {
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL is not set");
+    }
+    _sql = neon(process.env.DATABASE_URL);
+  }
+  return _sql;
+}
 
 // Single-creator demo mode for hackathon scope.
 // All routes operate against creator id=1; we'll generalize once auth is in.

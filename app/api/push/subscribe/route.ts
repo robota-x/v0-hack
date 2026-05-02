@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql, DEMO_CREATOR_ID } from "@/lib/db";
+import { getSql, DEMO_CREATOR_ID } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +9,7 @@ type SubscribeBody = {
 };
 
 export async function POST(req: Request) {
+  const sql = getSql();
   const body = (await req.json()) as SubscribeBody;
   if (!body?.endpoint || !body?.keys?.p256dh || !body?.keys?.auth) {
     return NextResponse.json(
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const sql = getSql();
   const body = (await req.json().catch(() => ({}))) as { endpoint?: string };
   if (!body.endpoint) {
     return NextResponse.json({ error: "endpoint required" }, { status: 400 });

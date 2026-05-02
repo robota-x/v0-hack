@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
-import { sql, DEMO_CREATOR_ID, type Creator, type Snapshot } from "@/lib/db";
+import { getSql, DEMO_CREATOR_ID, type Creator, type Snapshot } from "@/lib/db";
 import { Dashboard } from "@/components/dashboard";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const sql = getSql();
   const creators = (await sql`
     SELECT id, name, niche, interests, style, onboarded, created_at, updated_at
     FROM creators

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { sql, DEMO_CREATOR_ID, type Snapshot } from "@/lib/db";
+import { getSql, DEMO_CREATOR_ID, type Snapshot } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 // Used by the workflow's persistSnapshot step to write a new snapshot.
 // Protected by INTERNAL_API_TOKEN — workflow passes it as Authorization: Bearer.
 export async function POST(req: Request) {
+  const sql = getSql();
   const expected = process.env.INTERNAL_API_TOKEN;
   if (expected) {
     const auth = req.headers.get("authorization") ?? "";
