@@ -1,17 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Fraunces } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/bottom-nav";
+import { TopAppBar } from "@/components/top-app-bar";
 
-const inter = Inter({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
+  variable: "--font-plus-jakarta",
   display: "swap",
 });
 
@@ -25,7 +20,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#fbf8f3",
+  themeColor: "#38bdf8",
 };
 
 export default function RootLayout({
@@ -34,13 +29,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${fraunces.variable} bg-background`}
-    >
-      <body className="font-sans text-foreground antialiased">
+    <html lang="en" className={`${plusJakarta.variable} bg-background`}>
+      <body className="bg-background font-sans text-foreground antialiased">
         <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
-          <main className="flex-1 pb-24">{children}</main>
+          <TopAppBar />
+          <main className="flex-1 px-4 pb-28 pt-24">{children}</main>
           <BottomNav />
         </div>
       </body>

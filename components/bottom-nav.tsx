@@ -20,9 +20,9 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-md justify-center px-4 pb-4"
+      className="fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-md justify-center px-4 pb-3"
     >
-      <ul className="flex w-full items-center justify-around rounded-full border border-border bg-card/90 p-1.5 shadow-[0_8px_24px_rgba(31,41,55,0.08)] backdrop-blur">
+      <ul className="flex w-full items-center justify-around rounded-t-3xl border-t-2 border-[#1e1b4b] bg-white/90 p-2 backdrop-blur-lg shadow-[0_-4px_0px_0px_rgba(0,0,0,0.05)]">
         {items.map(({ href, label, icon: Icon }) => {
           const active =
             href === "/" ? pathname === "/" : pathname?.startsWith(href);
@@ -31,10 +31,10 @@ export function BottomNav() {
               <Link
                 href={href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 rounded-full py-2 text-xs font-medium transition-colors",
+                  "flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 text-[10px] font-extrabold uppercase tracking-widest transition-all",
                   active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground",
+                    ? "border-2 border-black bg-[#a3e635] text-[#1e1b4b] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                    : "text-gray-600 hover:-translate-y-0.5 hover:text-[#f97316]",
                 )}
               >
                 <Icon

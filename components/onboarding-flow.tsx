@@ -91,20 +91,20 @@ export function OnboardingFlow({ initial }: { initial?: Creator }) {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <div className="flex items-center gap-2 px-5 pt-6">
+      <div className="neo-glass mx-2 mt-2 flex items-center gap-2 px-5 py-4">
         {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
           <span
             key={i}
             className={cn(
-              "h-1.5 flex-1 rounded-full transition-colors",
-              i <= step ? "bg-primary" : "bg-muted",
+              "h-2 flex-1 rounded-full border border-[#1e1b4b] transition-colors",
+              i <= step ? "bg-[#a3e635]" : "bg-white/60",
             )}
             aria-hidden="true"
           />
         ))}
       </div>
 
-      <div className="flex flex-1 flex-col px-5 pt-8">
+      <div className="flex flex-1 flex-col px-2 pt-6">
         {step === 0 ? <Welcome /> : null}
         {step === 1 ? (
           <StepShell
@@ -191,7 +191,7 @@ export function OnboardingFlow({ initial }: { initial?: Creator }) {
         ) : null}
       </div>
 
-      <footer className="sticky bottom-0 flex items-center gap-2 border-t border-border bg-background/90 px-5 py-4 backdrop-blur">
+      <footer className="sticky bottom-0 mt-6 flex items-center gap-2 border-t-2 border-[#1e1b4b] bg-white/80 px-2 py-4 backdrop-blur">
         {step > 0 ? (
           <Button
             variant="ghost"
@@ -224,17 +224,17 @@ export function OnboardingFlow({ initial }: { initial?: Creator }) {
 function Welcome() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center text-center">
-      <div className="grid size-16 place-items-center rounded-full bg-primary/15 text-primary">
+      <div className="grid size-16 place-items-center rounded-full border-2 border-[#1e1b4b] bg-[#fef08a] text-[#1e1b4b]">
         <Sparkles size={28} aria-hidden="true" />
       </div>
-      <h1 className="mt-5 font-display text-4xl leading-tight text-balance">
+      <h1 className="mt-5 font-display text-4xl font-extrabold leading-tight text-balance text-[#1e1b4b]">
         Meet your creator companion.
       </h1>
-      <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground text-pretty">
+      <p className="mt-3 max-w-xs text-sm leading-relaxed text-on-surface-variant text-pretty">
         We watch your sphere of interest on Instagram and surface the trends
         that actually fit your voice. No noise, no chasing.
       </p>
-      <Card className="mt-8 w-full text-left">
+      <Card className="neo-shadow mt-8 w-full text-left">
         <CardContent className="space-y-2 text-sm">
           <Bullet>Tell us a little about your work</Bullet>
           <Bullet>Add accounts and tags to follow</Bullet>
@@ -249,10 +249,10 @@ function Bullet({ children }: { children: React.ReactNode }) {
   return (
     <p className="flex items-start gap-2.5">
       <span
-        className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary"
+        className="mt-1.5 size-2 shrink-0 rounded-full bg-[#f43f5e]"
         aria-hidden="true"
       />
-      <span className="leading-relaxed text-foreground">{children}</span>
+      <span className="leading-relaxed text-on-surface">{children}</span>
     </p>
   );
 }
@@ -269,14 +269,14 @@ function StepShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-1 flex-col">
-      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+    <div className="neo-glass flex flex-1 flex-col p-6">
+      <p className="inline-flex w-fit rounded-full border-2 border-[#1e1b4b] bg-[#fef08a] px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-[#1e1b4b]">
         {eyebrow}
       </p>
-      <h1 className="mt-2 font-display text-3xl leading-tight text-balance">
+      <h1 className="mt-3 font-display text-3xl font-extrabold leading-tight text-balance text-[#1e1b4b]">
         {title}
       </h1>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">
+      <p className="mt-2 text-sm leading-relaxed text-on-surface-variant text-pretty">
         {description}
       </p>
       <div className="mt-6">{children}</div>
@@ -312,7 +312,9 @@ function SeedList({
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium">{label}</p>
+      <p className="text-sm font-bold uppercase tracking-wider text-[#1e1b4b]">
+        {label}
+      </p>
       <div className="flex gap-2">
         <Input
           value={draft}
@@ -334,7 +336,7 @@ function SeedList({
           {items.map((item) => (
             <li
               key={item}
-              className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs"
+              className="inline-flex items-center gap-1 rounded-full border-2 border-[#1e1b4b] bg-[#fef08a] px-2.5 py-1 text-xs font-semibold text-[#1e1b4b]"
             >
               <span>
                 {label === "Accounts" ? `@${item}` : `#${item}`}
@@ -344,7 +346,7 @@ function SeedList({
                 onClick={() =>
                   onChange(items.filter((i) => i !== item))
                 }
-                className="text-muted-foreground hover:text-destructive"
+                className="text-[#1e1b4b]/70 hover:text-[#f43f5e]"
                 aria-label={`Remove ${item}`}
               >
                 ×

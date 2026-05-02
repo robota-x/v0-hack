@@ -42,8 +42,8 @@ export function ProfileEditor({ initial }: { initial: Creator }) {
         description="The more we know about you, the better we can rank what matters."
       />
 
-      <form onSubmit={save} className="space-y-4 px-5">
-        <Card>
+      <form onSubmit={save} className="space-y-4 px-2">
+        <Card className="neo-shadow">
           <CardContent className="space-y-4">
             <Field label="Name">
               <Input
@@ -82,7 +82,12 @@ export function ProfileEditor({ initial }: { initial: Creator }) {
           </CardContent>
         </Card>
 
-        <Button type="submit" size="lg" className="w-full" disabled={saving}>
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full justify-center"
+          disabled={saving}
+        >
           {saved ? (
             <>
               <Check size={16} aria-hidden="true" /> Saved
@@ -109,9 +114,13 @@ function Field({
 }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-sm font-medium text-foreground">{label}</span>
+      <span className="text-sm font-bold uppercase tracking-wider text-[#1e1b4b]">
+        {label}
+      </span>
       {children}
-      {hint ? <span className="block text-xs text-muted-foreground">{hint}</span> : null}
+      {hint ? (
+        <span className="block text-xs text-on-surface-variant">{hint}</span>
+      ) : null}
     </label>
   );
 }

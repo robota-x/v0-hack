@@ -29,7 +29,7 @@ export function FollowManager() {
         description="Add Instagram accounts and hashtags. We'll watch them on your behalf."
       />
 
-      <div className="space-y-5 px-5">
+      <div className="space-y-5 px-2">
         <Section
           icon={<AtSign size={16} aria-hidden="true" />}
           title="Accounts"
@@ -125,14 +125,16 @@ function Section({
   }
 
   return (
-    <Card>
+    <Card className="neo-shadow">
       <CardContent className="space-y-3">
         <div className="flex items-center gap-2 text-foreground">
-          <span className="grid size-7 place-items-center rounded-full bg-muted text-muted-foreground">
+          <span className="grid size-7 place-items-center rounded-full border-2 border-[#1e1b4b] bg-[#fef08a] text-[#1e1b4b]">
             {icon}
           </span>
-          <h2 className="font-display text-lg">{title}</h2>
-          <span className="ml-auto text-xs text-muted-foreground">
+          <h2 className="font-display text-lg font-extrabold text-[#1e1b4b]">
+            {title}
+          </h2>
+          <span className="ml-auto rounded-full border-2 border-[#1e1b4b] bg-[#a3e635] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#1e1b4b]">
             {items.length}
           </span>
         </div>
@@ -154,15 +156,15 @@ function Section({
           </Button>
         </form>
         {error ? (
-          <p className="text-xs text-destructive" role="alert">
+          <p className="text-xs font-semibold text-[#f43f5e]" role="alert">
             {error}
           </p>
         ) : null}
 
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p className="text-sm text-on-surface-variant">Loading…</p>
         ) : items.length === 0 ? (
-          <p className="rounded-md bg-muted px-3 py-2.5 text-sm text-muted-foreground">
+          <p className="rounded-xl border-2 border-dashed border-[#1e1b4b] bg-white/60 px-3 py-2.5 text-sm text-on-surface-variant">
             Nothing here yet. Add your first one above.
           </p>
         ) : (
@@ -172,13 +174,13 @@ function Section({
                 <button
                   type="button"
                   onClick={() => onRemove(item.id)}
-                  className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm transition-colors hover:border-destructive/40 hover:bg-destructive/5"
+                  className="group inline-flex items-center gap-1.5 rounded-full border-2 border-[#1e1b4b] bg-[#fef08a] px-3 py-1.5 text-sm font-semibold text-[#1e1b4b] transition-colors hover:bg-[#ffe975]"
                   aria-label={`Remove ${item.label}`}
                 >
                   <span>{item.label}</span>
                   <X
                     size={14}
-                    className="text-muted-foreground group-hover:text-destructive"
+                    className="text-[#1e1b4b]/70 group-hover:text-[#f43f5e]"
                     aria-hidden="true"
                   />
                 </button>

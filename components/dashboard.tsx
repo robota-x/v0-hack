@@ -40,7 +40,7 @@ export function Dashboard({
   const firstName = creator.name?.split(" ")[0] ?? "there";
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Today's snapshot"
         title={`Hey ${firstName} — here's what's stirring.`}
@@ -52,7 +52,7 @@ export function Dashboard({
         action={
           <Button
             size="sm"
-            variant="secondary"
+            variant="primary"
             onClick={handleTrigger}
             disabled={triggering}
             aria-label="Run sweep"
@@ -62,21 +62,52 @@ export function Dashboard({
               className={triggering ? "animate-spin" : ""}
               aria-hidden="true"
             />
-            {triggering ? "Running" : "Sweep"}
+            {triggering ? "Running" : "Sweep now"}
           </Button>
         }
       />
 
-      <div className="space-y-3 px-5">
+      <section className="neo-glass neo-shadow mx-2 space-y-4 p-6">
+        <div className="flex items-start justify-between gap-4">
+          <Badge tone="accent">Daily spark</Badge>
+          <Sparkles
+            size={30}
+            className="shrink-0 text-[#f43f5e]"
+            aria-hidden="true"
+          />
+        </div>
+        <h2 className="font-display text-3xl font-extrabold leading-tight text-[#1e1b4b] text-balance">
+          {snapshot ? "Signal is hot in your sphere." : "Your pulse feed is ready."}
+        </h2>
+        <p className="text-on-surface-variant text-base leading-relaxed">
+          {snapshot
+            ? `Your last sweep was ${timeAgo(snapshot.created_at)}. Open the ranked trends below and decide what to ship next.`
+            : "Run your first sweep to convert your follows into ranked ideas tailored to your niche."}
+        </p>
+        <Button
+          onClick={handleTrigger}
+          disabled={triggering}
+          className="w-full justify-center"
+        >
+          <RefreshCw
+            size={14}
+            className={triggering ? "animate-spin" : ""}
+            aria-hidden="true"
+          />
+          {triggering ? "Running" : "Watch breakdown"}
+        </Button>
+      </section>
+
+      <div className="space-y-4 px-2">
         {snapshot && snapshot.summary ? (
-          <Card className="border-accent/40 bg-accent/15">
+          <Card>
             <CardContent className="flex gap-3">
               <Sparkles
                 size={18}
-                className="mt-0.5 shrink-0 text-accent-foreground"
+                className="mt-0.5 shrink-0 text-[#f43f5e]"
                 aria-hidden="true"
               />
-              <p className="text-sm leading-relaxed text-foreground">
+              <p className="text-sm leading-relaxed text-on-surface-variant">
                 {snapshot.summary}
               </p>
             </CardContent>
@@ -86,7 +117,7 @@ export function Dashboard({
         {themes.length === 0 ? (
           <EmptyState onTrigger={handleTrigger} triggering={triggering} />
         ) : (
-          <ol className="space-y-3">
+          <ol className="space-y-4">
             {themes.map((theme, i) => (
               <li key={`${theme.title}-${i}`}>
                 <ThemeCard theme={theme} />
@@ -96,7 +127,7 @@ export function Dashboard({
         )}
 
         {snapshot ? (
-          <p className="flex items-center justify-center gap-1.5 pt-4 text-xs text-muted-foreground">
+          <p className="flex items-center justify-center gap-1.5 pt-3 text-xs font-bold uppercase tracking-wider text-[#1e1b4b]/70">
             <Clock size={12} aria-hidden="true" />
             Updated {timeAgo(snapshot.created_at)}
           </p>
@@ -108,27 +139,27 @@ export function Dashboard({
 
 function ThemeCard({ theme }: { theme: SnapshotTheme }) {
   return (
-    <Card>
-      <CardContent className="space-y-2">
+    <Card className="neo-shadow-hover cursor-pointer">
+      <CardContent className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="font-display text-xl text-primary">
+            <span className="font-display text-xl font-extrabold text-[#1e1b4b]">
               {String(theme.rank).padStart(2, "0")}
             </span>
-            <h2 className="font-display text-lg leading-snug text-foreground text-balance">
+            <h2 className="font-display text-lg font-bold leading-snug text-[#1e1b4b] text-balance">
               {theme.title}
             </h2>
           </div>
           {typeof theme.source_count === "number" ? (
-            <Badge tone="primary">{theme.source_count} sources</Badge>
+            <Badge tone="destructive">{theme.source_count} sources</Badge>
           ) : null}
         </div>
-        <p className="text-sm leading-relaxed text-muted-foreground text-pretty">
+        <p className="text-sm leading-relaxed text-on-surface-variant text-pretty">
           {theme.summary}
         </p>
         {theme.why_it_matters ? (
-          <p className="rounded-md bg-muted px-3 py-2 text-xs leading-relaxed text-foreground">
-            <span className="font-medium">Why for you: </span>
+          <p className="rounded-xl border-2 border-[#1e1b4b] bg-[#eef2ff] px-3 py-2 text-xs leading-relaxed text-[#1e1b4b]">
+            <span className="font-bold uppercase tracking-wide">Why for you: </span>
             {theme.why_it_matters}
           </p>
         ) : null}
@@ -145,16 +176,16 @@ function EmptyState({
   triggering: boolean;
 }) {
   return (
-    <Card className="border-dashed">
+    <Card className="border-dashed border-[#1e1b4b]">
       <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-        <div className="grid size-12 place-items-center rounded-full bg-primary/15 text-primary">
+        <div className="grid size-12 place-items-center rounded-full border-2 border-[#1e1b4b] bg-[#fef08a] text-[#1e1b4b]">
           <Sparkles size={22} aria-hidden="true" />
         </div>
         <div>
-          <h2 className="font-display text-lg text-foreground">
+          <h2 className="font-display text-lg font-extrabold text-[#1e1b4b]">
             Your first sweep awaits
           </h2>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground text-pretty">
+          <p className="mt-1 text-sm leading-relaxed text-on-surface-variant text-pretty">
             We'll scan the accounts and tags you follow, then surface the themes
             that matter to your niche.
           </p>
